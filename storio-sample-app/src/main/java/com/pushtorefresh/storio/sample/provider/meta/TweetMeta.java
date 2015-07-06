@@ -64,7 +64,9 @@ public class TweetMeta {
             return Tweet.newTweet(
                     cursor.getLong(cursor.getColumnIndexOrThrow(TweetTableMeta.COLUMN_ID)),
                     cursor.getString(cursor.getColumnIndexOrThrow(TweetTableMeta.COLUMN_AUTHOR)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(TweetTableMeta.COLUMN_CONTENT))
+                    cursor.getString(cursor.getColumnIndexOrThrow(TweetTableMeta.COLUMN_CONTENT)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(TweetTableMeta.COLUMN_CONTENT1))
+                    ,cursor.getString(cursor.getColumnIndexOrThrow(TweetTableMeta.COLUMN_CONTENT2))
             );
         }
     };

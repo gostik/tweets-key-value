@@ -19,17 +19,29 @@ public class DbOpenHelper extends SQLiteOpenHelper {
         return "CREATE TABLE " + TweetTableMeta.TABLE + "("
                 + TweetTableMeta.COLUMN_ID + " INTEGER NOT NULL PRIMARY KEY, "
                 + TweetTableMeta.COLUMN_AUTHOR + " TEXT NOT NULL, "
-                + TweetTableMeta.COLUMN_CONTENT + " TEXT NOT NULL"
+                + TweetTableMeta.COLUMN_CONTENT + " TEXT NOT NULL, "
+                + TweetTableMeta.COLUMN_CONTENT1 + " TEXT NOT NULL, "
+                + TweetTableMeta.COLUMN_CONTENT2 + " TEXT NOT NULL"
+                + ");";
+    }
+
+    private static String getCreateTweetKVTableQuery() {
+        return "CREATE TABLE " + TweetTableMeta.TABLEKV + "("
+                + TweetTableMeta.COLUMN_ID + " INTEGER NOT NULL PRIMARY KEY, "
+                + TweetTableMeta.COLUMN_BLOB + " BLOB TEXT NOT NULL"
                 + ");";
     }
 
     @Override
     public void onCreate(@NonNull SQLiteDatabase db) {
         db.execSQL(getCreateTweetTableQuery());
+        db.execSQL(getCreateTweetKVTableQuery());
     }
 
     @Override
     public void onUpgrade(@NonNull SQLiteDatabase db, int oldVersion, int newVersion) {
         // no impl
     }
+
+
 }

@@ -66,6 +66,8 @@ dependencies {
     compile libraries.recyclerView
     compile libraries.timber
 
+    compile libraries.flatbuffer
+    compile 'com.squareup.wire:wire-runtime:1.8.0'
     debugCompile   libraries.leakCanary
     releaseCompile libraries.leakCanaryNoOp
 }

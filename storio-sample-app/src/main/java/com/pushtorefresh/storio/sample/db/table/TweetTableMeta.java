@@ -19,7 +19,12 @@ import com.pushtorefresh.storio.sqlite.queries.UpdateQuery;
 public class TweetTableMeta {
 
     public static final String TABLE = "tweets";
+
+    public static final String TABLEKV = "tweetskv";
+
     public static final String COLUMN_ID = "_id";
+
+    public static final String COLUMN_BLOB = "blobField";
     /**
      * For example: "artem_zin" without "@"
      */
@@ -28,6 +33,11 @@ public class TweetTableMeta {
      * For example: "Check out StorIO — modern API for SQLiteDatabase & ContentResolver #androiddev"
      */
     public static final String COLUMN_CONTENT = "content";
+
+    public static final String COLUMN_CONTENT1 = "content1";
+
+    public static final String COLUMN_CONTENT2 = "content2";
+
     public static final PutResolver<Tweet> PUT_RESOLVER = new DefaultPutResolver<Tweet>() {
         @NonNull
         @Override
@@ -55,6 +65,8 @@ public class TweetTableMeta {
             contentValues.put(COLUMN_ID, tweet.id());
             contentValues.put(COLUMN_AUTHOR, tweet.author());
             contentValues.put(COLUMN_CONTENT, tweet.content());
+            contentValues.put(COLUMN_CONTENT1, tweet.content1());
+            contentValues.put(COLUMN_CONTENT2, tweet.content2());
 
             return contentValues;
         }
@@ -66,7 +78,9 @@ public class TweetTableMeta {
             return Tweet.newTweet(
                     cursor.getLong(cursor.getColumnIndex(COLUMN_ID)),
                     cursor.getString(cursor.getColumnIndex(COLUMN_AUTHOR)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT))
+                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT1)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT2))
             );
         }
     };
@@ -84,6 +98,11 @@ public class TweetTableMeta {
     public static final Query QUERY_ALL = Query.builder()
             .table(TABLE)
             .build();
+
+    public static final Query QUERY_KV_ALL = Query.builder()
+            .table(TABLEKV)
+            .build();
+
 
     private TweetTableMeta() {
         throw new IllegalStateException("No instances please");

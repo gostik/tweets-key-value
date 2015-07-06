@@ -19,7 +19,8 @@ public enum JavaType {
     FLOAT_OBJECT,
     DOUBLE,
     DOUBLE_OBJECT,
-    STRING;
+    STRING,
+    BYTE_ARRAY;
 
     @NotNull
     public static JavaType from(@NotNull TypeMirror typeMirror) {
@@ -52,7 +53,10 @@ public enum JavaType {
             return DOUBLE_OBJECT;
         } else if ("java.lang.String".equals(typeName)) {
             return STRING;
-        } else {
+        } else if (typeKind==TypeKind.ARRAY){
+            return BYTE_ARRAY;
+        }
+        else {
             throw new IllegalArgumentException("Unsupported type: " + typeMirror);
         }
     }
