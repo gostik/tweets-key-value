@@ -64,15 +64,6 @@ public class Tweet extends Message {
         this.content1 = content1;
         this.content2 = content2;
         this.author = author;
-
-//        Builder builder = new Builder(this)
-//                .author(author)
-//                .content(content)
-//                .content1(content1)
-//                .content2(content2)
-//                .id(id);
-//        setBuilder(builder);
-
     }
 
     @NonNull
