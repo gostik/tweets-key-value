@@ -5,8 +5,8 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 
 import com.pushtorefresh.storio.sample.R;
-import com.pushtorefresh.storio.sample.ui.Toasts;
 import com.pushtorefresh.storio.sample.ui.activity.db.TweetsSampleActivity;
+import com.pushtorefresh.storio.sample.ui.fragment.TweetsFragment;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -23,11 +23,13 @@ public class MainActivity extends BaseActivity {
 
     @OnClick(R.id.main_db_sample)
     void openDbSample() {
+        TweetsFragment.isKV=false;
         startActivity(new Intent(this, TweetsSampleActivity.class));
     }
 
-    @OnClick(R.id.main_content_resolver_sample)
+    @OnClick(R.id.main_tweet_key_value)
     void openContentResolverSample() {
-        Toasts.safeShowShortToast(this, "Not implemented :(");
+        TweetsFragment.isKV=true;
+        startActivity(new Intent(this, TweetsSampleActivity.class));
     }
 }

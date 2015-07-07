@@ -23,13 +23,13 @@
             android:text="@string/main_tweets_sample" />
 
         <TextView
-            android:id="@+id/main_content_resolver_sample"
+            android:id="@+id/main_tweet_key_value"
             style="@style/MainSampleItem"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:background="#3941f9"
-            android:text="@string/main_content_provider_sample" />
+            android:text="@string/main_tweets_kv" />
 
     </LinearLayout>
 

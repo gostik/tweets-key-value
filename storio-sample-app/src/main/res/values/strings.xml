@@ -7,7 +7,8 @@
     <string name="tweets_empty">No tweets :(</string>
     <string name="tweets_add_tweets">Add tweets</string>
     <string name="tweets_add_error_toast">Can not add tweets</string>
-    <string name="main_tweets_sample">Tweets — Db sample</string>
-    <string name="main_content_provider_sample">Contacts — ContentResolver sample</string>
+    <string name="main_tweets_sample">Tweets — default sql</string>
+    <string name="main_tweets_kv">Tweets Key-Value</string>
     <string name="tweets_db_sample_label">Tweets — Db Sample</string>
+    <string name="sort_ab">Sort</string>
 </resources>

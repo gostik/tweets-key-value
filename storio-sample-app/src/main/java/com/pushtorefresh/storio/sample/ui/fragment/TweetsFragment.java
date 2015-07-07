@@ -1,5 +1,6 @@
 package com.pushtorefresh.storio.sample.ui.fragment;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,9 +23,12 @@ import com.pushtorefresh.storio.sqlite.StorIOSQLite;
 import com.pushtorefresh.storio.sqlite.operations.put.PutResults;
 import com.squareup.wire.Wire;
 
+import org.fluttercode.datafactory.impl.DataFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 import javax.inject.Inject;
 
@@ -34,6 +38,7 @@ import butterknife.OnClick;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
@@ -45,6 +50,7 @@ import static rx.android.schedulers.AndroidSchedulers.mainThread;
 
 public class TweetsFragment extends BaseFragment {
 
+    private static final int COUNT_TO_ADD = 5000;
     @Inject
     StorIOSQLite storIOSQLite;
 
@@ -54,6 +60,11 @@ public class TweetsFragment extends BaseFragment {
     RecyclerView recyclerView;
 
     TweetsAdapter tweetsAdapter;
+
+    @Inject
+    Wire wire;
+
+    public static boolean isKV = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -89,20 +100,25 @@ public class TweetsFragment extends BaseFragment {
     @Override
     public void onStart() {
         super.onStart();
+
         reloadData();
-        //reloadDataKV();
     }
 
-    void reloadData() {
-        uiStateController.setUiStateLoading();
-
-        final Subscription subscription = storIOSQLite
+    @NonNull
+    private Observable<List<Tweet>> getObservable() {
+        return storIOSQLite
                 .get()
                 .listOfObjects(Tweet.class)
                 .withQuery(TweetTableMeta.QUERY_ALL)
                 .prepare()
-                .createObservable() // it will be subscribed to changes in tweets table!
-                .delay(1, SECONDS) // for better User Experience :) Actually, StorIO is so fast that we need to delay emissions (it's a joke, or not)
+                .createObservable();
+    }
+
+    void reloadData() {
+        uiStateController.setUiStateLoading();
+        Observable<List<Tweet>> listObservable = isKV ? getKVListObservable() : getObservable();
+
+        final Subscription subscription = listObservable
                 .observeOn(mainThread())
                 .subscribe(new Action1<List<Tweet>>() {
                     @Override
@@ -127,14 +143,9 @@ public class TweetsFragment extends BaseFragment {
         unsubscribeOnStop(subscription); // preventing memory leak
     }
 
-
-    @Inject
-    Wire wire;
-
-    void reloadDataKV() {
-        uiStateController.setUiStateLoading();
-
-        final Subscription subscription = storIOSQLite
+    @NonNull
+    private Observable<List<Tweet>> getKVListObservable() {
+        return storIOSQLite
                 .get()
                 .listOfObjects(TweetKV.class)
                 .withQuery(TweetTableMeta.QUERY_KV_ALL)
@@ -154,92 +165,71 @@ public class TweetsFragment extends BaseFragment {
 
                         return Observable.just(tweets);
                     }
-                })
-                        //   .delay(1, SECONDS) // for better User Experience :) Actually, StorIO is so fast that we need to delay emissions (it's a joke, or not)
-                .observeOn(mainThread())
-                .subscribe(new Action1<List<Tweet>>() {
-                    @Override
-                    public void call(List<Tweet> tweets) {
-                        if (tweets.isEmpty()) {
-                            uiStateController.setUiStateEmpty();
-                            tweetsAdapter.setTweets(null);
-                        } else {
-                            uiStateController.setUiStateContent();
-                            tweetsAdapter.setTweets(tweets);
-                        }
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        Timber.e(throwable, "reloadData()");
-                        uiStateController.setUiStateError();
-                        tweetsAdapter.setTweets(null);
-                    }
                 });
-
-        unsubscribeOnStop(subscription); // preventing memory leak
     }
 
     @OnClick(R.id.tweets_empty_ui_add_tweets_button)
     void addTweets() {
+        final List<Tweet> tweets = generateTweets();
+
+        if (!isKV) putTweets(tweets);
+        else
+            putKVTweets(tweets);
+    }
+
+    @NonNull
+    private List<Tweet> generateTweets() {
         final List<Tweet> tweets = new ArrayList<Tweet>();
 
-        Observable.range(1, 5000)
+        final ProgressDialog progressDialog = new ProgressDialog(getActivity());
+        progressDialog.setMessage("Generating");
+        final DataFactory df = new DataFactory();
+        Observable.range(1, COUNT_TO_ADD)
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        progressDialog.show();
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        progressDialog.dismiss();
+                    }
+                })
                 .subscribe(new Action1<Integer>() {
                     @Override
                     public void call(Integer integer) {
-                        tweets.add(Tweet.newTweet("artem_zin", "Checkout StorIO — modern API for SQLiteDatabase & ContentResolver", "Content1", "Content2"));
+
+                        tweets.add(Tweet.newTweet(df.getFirstName(), df.getRandomText(20, 100), df.getAddress(), df.getCity()));
                     }
                 });
+        return tweets;
+    }
 
-
-//        tweets.add(Tweet.newTweet("artem_zin", "Checkout StorIO — modern API for SQLiteDatabase & ContentResolver"));
-//        tweets.add(Tweet.newTweet("HackerNews", "It's revolution! Dolphins can write news on HackerNews with our new app!"));
-//        tweets.add(Tweet.newTweet("AndroidDevReddit", "Awesome library — StorIO"));
-//        tweets.add(Tweet.newTweet("Facebook", "Facebook community in Twitter is more popular than Facebook community in Facebook and Instagram!"));
-//        tweets.add(Tweet.newTweet("Google", "Android be together not the same: AOSP, AOSP + Google Apps, Samsung Android"));
-//        tweets.add(Tweet.newTweet("Reddit", "Now we can send funny gifs directly into your brain via Oculus Rift app!"));
-//        tweets.add(Tweet.newTweet("ElonMusk", "Tesla Model S OTA update with Android Auto 5.2, fixes for memory leaks"));
-//        tweets.add(Tweet.newTweet("AndroidWeekly", "Special issue #1: StorIO — forget about SQLiteDatabase, ContentResolver APIs, ORMs sucks!"));
-//        tweets.add(Tweet.newTweet("Apple", "Yosemite update: fixes for Wifi issues, yosemite-wifi-patch#142"));
-
-
-//        storIOSQLite
-//                .put()
-//                .objects(tweets)
-//                .prepare()
-//                .createObservable()
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(mainThread())
-//                .subscribe(new Observer<PutResults<Tweet>>() {
-//                    @Override
-//                    public void onError(Throwable e) {
-//                        safeShowShortToast(getActivity(), R.string.tweets_add_error_toast);
-//                    }
-//
-//                    @Override
-//                    public void onNext(PutResults<Tweet> putResults) {
-//                        safeShowShortToast(getActivity(), "Added to default: " + putResults.results().size());
-//                    }
-//
-//                    @Override
-//                    public void onCompleted() {
-//                        // no impl
-//                    }
-//                });
-
-        //////////////KV//////////////////////////
-        ArrayList<TweetKV> tweetKVs = new ArrayList<TweetKV>();
-        for (Tweet tweet : tweets) {
-            tweetKVs.add(new TweetKV(tweet.getByteArray()));
-        }
-
+    private void putKVTweets(List<Tweet> tweets) {
+        ArrayList<TweetKV> tweetKVs = convertTweetsToKV(tweets);
+        final long timeBefore = System.currentTimeMillis();
+        final ProgressDialog progressDialog = new ProgressDialog(getActivity());
+        progressDialog.setMessage("Adding");
         storIOSQLite.put()
                 .objects(tweetKVs)
                 .prepare()
                 .createObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(mainThread())
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        progressDialog.show();
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        progressDialog.dismiss();
+                    }
+                })
                 .subscribe(new Observer<PutResults<TweetKV>>() {
                     @Override
                     public void onError(Throwable e) {
@@ -248,14 +238,60 @@ public class TweetsFragment extends BaseFragment {
 
                     @Override
                     public void onNext(PutResults<TweetKV> putResults) {
-
-                        safeShowShortToast(getActivity(), "Added to KV: " + putResults.results().size());
-                        // handled via reactive stream! see reloadData()
+                        safeShowShortToast(getActivity(), "Added to KV: " + putResults.numberOfInserts() + "in " + String.valueOf(System.currentTimeMillis() - timeBefore) + " millis");
                     }
 
                     @Override
                     public void onCompleted() {
-                        // no impl
+                    }
+                });
+    }
+
+    @NonNull
+    private ArrayList<TweetKV> convertTweetsToKV(List<Tweet> tweets) {
+        ArrayList<TweetKV> tweetKVs = new ArrayList<TweetKV>();
+        for (Tweet tweet : tweets) {
+            tweetKVs.add(new TweetKV(tweet.getByteArray()));
+        }
+        return tweetKVs;
+    }
+
+    private void putTweets(List<Tweet> tweets) {
+        final ProgressDialog progressDialog = new ProgressDialog(getActivity());
+        progressDialog.setMessage("Adding");
+        final long timeBefore = System.currentTimeMillis();
+        storIOSQLite
+                .put()
+                .objects(tweets)
+                .prepare()
+                .createObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(mainThread())
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        progressDialog.show();
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        progressDialog.dismiss();
+                    }
+                })
+                .subscribe(new Observer<PutResults<Tweet>>() {
+                    @Override
+                    public void onError(Throwable e) {
+                        safeShowShortToast(getActivity(), R.string.tweets_add_error_toast);
+                    }
+
+                    @Override
+                    public void onNext(PutResults<Tweet> putResults) {
+                        safeShowShortToast(getActivity(), "Added to default: " + putResults.numberOfInserts() + "in " + String.valueOf(System.currentTimeMillis() - timeBefore) + " millis");
+                    }
+
+                    @Override
+                    public void onCompleted() {
                     }
                 });
     }
